@@ -1,11 +1,10 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8; coding: utf-8 -*- */
 /*
  * This file is part of GtkSourceView
  *
- * Copyright (C) 2005 - Paolo Borelli
- * Copyright (C) 2007 - Gustavo Giráldez
- * Copyright (C) 2007 - Paolo Maggi
- * Copyright (C) 2013, 2017 - Sébastien Wilmet <swilmet@gnome.org>
+ * Copyright 2005 - Paolo Borelli
+ * Copyright 2007 - Gustavo Giráldez
+ * Copyright 2007 - Paolo Maggi
+ * Copyright 2013, 2017 - Sébastien Wilmet <swilmet@gnome.org>
  *
  * GtkSourceView is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,9 +28,7 @@
  * Utility functions.
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include "config.h"
 
 #include "gtksourceutils.h"
 #include "gtksourceutils-private.h"
@@ -205,7 +202,7 @@ gtk_source_utils_escape_search_text (const gchar* text)
 	return g_string_free (str, FALSE);
 }
 
-#define GSV_DATA_SUBDIR "gtksourceview-" GSV_API_VERSION
+#define GSV_DATA_SUBDIR "gtksourceview-" GSV_API_VERSION_S
 
 gchar **
 _gtk_source_utils_get_default_dirs (const gchar *basename)
@@ -325,6 +322,7 @@ _gtk_source_utils_string_to_int (const gchar *str)
 #define FONT_VARIANT "font-variant"
 #define FONT_STRETCH "font-stretch"
 #define FONT_WEIGHT  "font-weight"
+#define FONT_STYLE   "font-style"
 #define FONT_SIZE    "font-size"
 
 gchar *
@@ -353,6 +351,31 @@ _gtk_source_utils_pango_font_description_to_css (const PangoFontDescription *fon
 	}
 
 	if ((mask & PANGO_FONT_MASK_STYLE) != 0)
+	{
+		PangoStyle style;
+
+		style = pango_font_description_get_style (font_desc);
+
+		switch (style)
+		{
+			case PANGO_STYLE_NORMAL:
+				ADD_KEYVAL (FONT_STYLE, "normal");
+				break;
+
+			case PANGO_STYLE_OBLIQUE:
+				ADD_KEYVAL (FONT_STYLE, "oblique");
+				break;
+
+			case PANGO_STYLE_ITALIC:
+				ADD_KEYVAL (FONT_STYLE, "italic");
+				break;
+
+			default:
+				break;
+		}
+	}
+
+	if ((mask & PANGO_FONT_MASK_VARIANT) != 0)
 	{
 		PangoVariant variant;
 
@@ -425,7 +448,7 @@ _gtk_source_utils_pango_font_description_to_css (const PangoFontDescription *fon
 		switch (pango_font_description_get_stretch (font_desc))
 		{
 			case PANGO_STRETCH_ULTRA_CONDENSED:
-				ADD_KEYVAL (FONT_STRETCH, "untra-condensed");
+				ADD_KEYVAL (FONT_STRETCH, "ultra-condensed");
 				break;
 
 			case PANGO_STRETCH_EXTRA_CONDENSED:
@@ -457,7 +480,7 @@ _gtk_source_utils_pango_font_description_to_css (const PangoFontDescription *fon
 				break;
 
 			case PANGO_STRETCH_ULTRA_EXPANDED:
-				ADD_KEYVAL (FONT_STRETCH, "untra-expanded");
+				ADD_KEYVAL (FONT_STRETCH, "ultra-expanded");
 				break;
 
 			default:

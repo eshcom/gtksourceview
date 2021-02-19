@@ -7,14 +7,12 @@ core_marshallers = gnome.genmarshal('gtksource-marshal',
 
 core_public_h = files([
   'gtksource.h',
-  'gtksourceautocleanups.h',
   'gtksourcebuffer.h',
   'gtksourcecompletion.h',
+  'gtksourcecompletioncell.h',
   'gtksourcecompletioncontext.h',
-  'gtksourcecompletioninfo.h',
-  'gtksourcecompletionitem.h',
-  'gtksourcecompletionproposal.h',
   'gtksourcecompletionprovider.h',
+  'gtksourcecompletionproposal.h',
   'gtksourceencoding.h',
   'gtksourcefile.h',
   'gtksourcefileloader.h',
@@ -26,6 +24,7 @@ core_public_h = files([
   'gtksourceinit.h',
   'gtksourcelanguage.h',
   'gtksourcelanguagemanager.h',
+  'gtksourcegutterlines.h',
   'gtksourcemap.h',
   'gtksourcemark.h',
   'gtksourcemarkattributes.h',
@@ -33,6 +32,10 @@ core_public_h = files([
   'gtksourceregion.h',
   'gtksourcesearchcontext.h',
   'gtksourcesearchsettings.h',
+  'gtksourcesnippet.h',
+  'gtksourcesnippetchunk.h',
+  'gtksourcesnippetcontext.h',
+  'gtksourcesnippetmanager.h',
   'gtksourcespacedrawer.h',
   'gtksourcestyle.h',
   'gtksourcestylescheme.h',
@@ -42,7 +45,6 @@ core_public_h = files([
   'gtksourcestyleschememanager.h',
   'gtksourcetag.h',
   'gtksourcetypes.h',
-  'gtksourceundomanager.h',
   'gtksourceutils.h',
   'gtksourceview.h',
 ])
@@ -50,11 +52,10 @@ core_public_h = files([
 core_public_c = files([
   'gtksourcebuffer.c',
   'gtksourcecompletion.c',
+  'gtksourcecompletioncell.c',
   'gtksourcecompletioncontext.c',
-  'gtksourcecompletioninfo.c',
-  'gtksourcecompletionitem.c',
-  'gtksourcecompletionproposal.c',
   'gtksourcecompletionprovider.c',
+  'gtksourcecompletionproposal.c',
   'gtksourceencoding.c',
   'gtksourcefile.c',
   'gtksourcefileloader.c',
@@ -66,6 +67,7 @@ core_public_c = files([
   'gtksourceinit.c',
   'gtksourcelanguage.c',
   'gtksourcelanguagemanager.c',
+  'gtksourcegutterlines.c',
   'gtksourcemap.c',
   'gtksourcemark.c',
   'gtksourcemarkattributes.c',
@@ -73,6 +75,10 @@ core_public_c = files([
   'gtksourceregion.c',
   'gtksourcesearchcontext.c',
   'gtksourcesearchsettings.c',
+  'gtksourcesnippet.c',
+  'gtksourcesnippetchunk.c',
+  'gtksourcesnippetcontext.c',
+  'gtksourcesnippetmanager.c',
   'gtksourcespacedrawer.c',
   'gtksourcestyle.c',
   'gtksourcestylescheme.c',
@@ -81,32 +87,41 @@ core_public_c = files([
   'gtksourcestyleschemechooserwidget.c',
   'gtksourcestyleschememanager.c',
   'gtksourcetag.c',
-  'gtksourceundomanager.c',
   'gtksourceutils.c',
   'gtksourceversion.c',
   'gtksourceview.c',
 ])
 
 core_private_c = files([
+  'gtksourceassistant.c',
+  'gtksourceassistantchild.c',
+  'gtksourcebindinggroup.c',
   'gtksourcebufferinputstream.c',
   'gtksourcebufferinternal.c',
   'gtksourcebufferoutputstream.c',
-  'gtksourcecompletioncontainer.c',
-  'gtksourcecompletionmodel.c',
+  'gtksourcecompletioninfo.c',
+  'gtksourcecompletionlist.c',
+  'gtksourcecompletionlistbox.c',
+  'gtksourcecompletionlistboxrow.c',
   'gtksourcecontextengine.c',
   'gtksourceengine.c',
   'gtksourcegutterrendererlines.c',
   'gtksourcegutterrenderermarks.c',
+  'gtksourceinformative.c',
   'gtksourceiter.c',
   'gtksourcelanguage-parser-2.c',
   'gtksourcemarkssequence.c',
   'gtksourcepixbufhelper.c',
   'gtksourceregex.c',
-  'gtksourceundomanagerdefault.c',
+  'gtksourcesignalgroup.c',
+  'gtksourceview-assistants.c',
+  'gtksourcesnippetbundle.c',
+  'gtksourcesnippetbundle-parser.c',
+  'gtksourceview-snippets.c',
+  'implregex.c',
 ])
 
 core_c_args = [
-  '-DHAVE_CONFIG_H',
   '-DGTK_SOURCE_COMPILATION',
   '-DG_LOG_DOMAIN="GtkSourceView"',
 ]
@@ -119,7 +134,14 @@ core_deps = [
   gio_dep,
   gtk_dep,
   libxml_dep,
+  pangoft2_dep,
+  fontconfig_dep,
+  pcre2_dep,
 ]
+
+if profiler_enabled
+  core_deps += [libsysprof_capture_dep]
+endif
 
 if config_h.has('OS_OSX')
   core_c_args += '-xobjective-c'
@@ -128,22 +150,19 @@ if config_h.has('OS_OSX')
   ]
 endif
 
-if cc.get_id() == 'msvc'
+if cc.get_id() == 'msvc' and cc.version().version_compare('<18')
   # include our math.h to implement round() for pre-2013 Visual Studio
-  msvc_maj_ver = cc.version().split('.')[0].to_int()
-  if msvc_maj_ver < 18
-    gtksourceview_include_dirs = [rootdir, include_directories('../msvc')]
-  else
-    gtksourceview_include_dirs = rootdir
-  endif
+  gtksourceview_extra_include_dirs = include_directories('../msvc')
 else
-  gtksourceview_include_dirs = rootdir
+  gtksourceview_extra_include_dirs = []
 endif
+
+gtksourceview_include_dirs = [rootdir, gtksourceview_extra_include_dirs]
 
 core_enums_header = '''
 
-#if defined (GTK_SOURCE_COMPILATION) && defined (HAVE_CONFIG_H)
-# include <config.h>
+#if defined (GTK_SOURCE_COMPILATION)
+# include "config.h"
 #endif
 
 #if !defined (GTK_SOURCE_H_INSIDE) && !defined (GTK_SOURCE_COMPILATION)
@@ -213,11 +232,7 @@ gtksource_deps = [
   core_dep,
 ]
 
-# We can't use the static libs on Visual Studio builds
-# to form our DLL here, so we must build all the core
-# and word completion provider sources into the main DLL
-# instead
-gtksource_libs = cc.get_id() == 'msvc' ? [] : [core_lib]
+gtksource_libs = [core_lib]
 
 extra_public_sources = []
 
@@ -228,35 +243,30 @@ gtksource_res = gnome.compile_resources(
   'gtksourceview.gresource.xml'
 )
 
+
 # We can't use the static libs on Visual Studio builds
-# to form our DLL here, so we must build all the core
-# and word completion provider sources into the main DLL
+# to form our DLL here directly, so we must use
+# extract_all_objects() to extract all the core and word
+# completion provider objects that we previously built
+# into static .lib's and link them into the main DLL
 # instead
-if cc.get_id() == 'msvc'
-  gtksource_word_provider_sources = []
-  foreach s: completionwords_public_c
-    gtksource_word_provider_sources += files(['completion-providers/words/@0@'.format(s)])
-  endforeach
-  gtksource_lib = shared_library(package_string,
-                  [core_sources, gtksource_word_provider_sources, gtksource_res],
-                  version: lib_version,
-      include_directories: gtksourceview_include_dirs,
-             dependencies: core_deps,
-                   c_args: core_c_args,
-                  install: true,
-  )
-else
-  gtksource_lib = shared_library(package_string, gtksource_res,
-                  version: lib_version,
-          darwin_versions: lib_osx_version,
-      include_directories: gtksourceview_include_dirs,
-             dependencies: gtksource_deps,
-               link_whole: gtksource_libs,
-                   c_args: core_c_args,
-                  install: true,
-    gnu_symbol_visibility: 'hidden',
-  )
-endif
+gtksource_objs = []
+foreach int_lib : gtksource_libs
+  gtksource_objs += int_lib.extract_all_objects()
+endforeach
+
+gtksource_lib = shared_library(package_string, gtksource_res,
+                version: lib_version,
+        darwin_versions: lib_osx_version,
+    include_directories: gtksourceview_include_dirs,
+           dependencies: cc.get_id() == 'msvc' ? core_deps : gtksource_deps,
+                objects: cc.get_id() == 'msvc' ? gtksource_objs : [],
+             link_whole: cc.get_id() == 'msvc' ? [] : gtksource_libs,
+                 c_args: core_c_args,
+              link_args: release_link_args,
+                install: true,
+  gnu_symbol_visibility: 'hidden',
+)
 
 gtksource_dep_sources = [
   core_enums_h,
@@ -278,12 +288,12 @@ if generate_gir
       identifier_prefix: 'GtkSource',
         export_packages: [package_string],
               link_with: gtksource_lib,
-               includes: [ 'Gdk-3.0', 'Gtk-3.0' ],
+               includes: [ 'Gtk-4.0' ],
                 install: true,
         install_dir_gir: girdir,
     install_dir_typelib: typelibdir,
              extra_args: [ '--c-include=gtksourceview/gtksource.h',
-	                   '--warn-all' ],
+                           '--warn-all' ],
   )
 
   gtksource_dep_sources += [
@@ -302,13 +312,11 @@ if generate_gir
       metadata_dirs: join_paths(builddir, 'gtksourceview'),
             install: true,
         install_dir: vapidir,
-           packages: [ 'atk',
-                       'gdk-3.0',
-		       'gdk-pixbuf-2.0',
-		       'gio-2.0',
-		       'gtk+-3.0',
-		       'pango',
-		       'cairo' ],
+           packages: [ 'gdk-pixbuf-2.0',
+                       'gio-2.0',
+                       'gtk4',
+                       'pango',
+                       'cairo' ],
     )
   endif
 endif
@@ -325,11 +333,23 @@ gtksource_pc_reqs = [
   'glib-2.0 @0@'.format(glib_req),
   'gobject-2.0 @0@'.format(glib_req),
   'gio-2.0 @0@'.format(glib_req),
-  'gtk+-3.0 @0@'.format(gtk_req),
+  'gtk4 @0@'.format(gtk_req),
 ]
 
-gtksource_pc_private_reqs = [
-  'libxml-2.0 @0@'.format(libxml_req),
+gtksource_pc_private_reqs = []
+gtksource_lib_private = []
+
+if libxml_dep.type_name() == 'pkgconfig'
+  gtksource_pc_private_reqs += [
+    'libxml-2.0 @0@'.format(libxml_req)
+  ]
+else
+  if libxml_dep.type_name() == 'library'
+    gtksource_lib_private += libxml_dep
+  endif
+endif
+
+gtksource_pc_private_reqs += [
   'fribidi @0@'.format(fribidi_req),
 ]
 
@@ -341,5 +361,6 @@ gtksource_pc = pkg.generate(
            version: version,
            subdirs: package_string,
          libraries: gtksource_lib,
+ libraries_private: gtksource_lib_private,
        install_dir: pkgconfigdir,
 )

@@ -51,6 +51,7 @@
   <style name="secondary-cursor"            foreground="base00"/>
   <style name="current-line"                background="base02"/>
   <style name="line-numbers"                foreground="base01" background="base02"/>
+  <style name="snippet-focus"               foreground="base01" background="base02"/>
   <style name="background-pattern"          background="base03-02-blend"/>
 
   <!-- Bracket Matching -->
@@ -81,6 +82,20 @@
   <!-- Types -->
   <style name="def:type"                    foreground="yellow"/>
 
+  <!-- Markup -->
+  <style name="def:emphasis"                italic="true"/>
+  <style name="def:strong-emphasis"         foreground="orange"/>
+  <style name="def:inline-code"             foreground="blue"/>
+  <style name="def:insertion"               underline="single"/>
+  <style name="def:deletion"                strikethrough="true"/>
+  <style name="def:link-text"               foreground="base01"/>
+  <style name="def:link-symbol"             foreground="base01" bold="true"/>
+  <style name="def:link-destination"        italic="true" underline="single"/>
+  <style name="def:heading"                 foreground="yellow"/>
+  <style name="def:thematic-break"          foreground="yellow"/>
+  <style name="def:preformatted-section"    foreground="blue"/>
+  <style name="def:list-marker"             foreground="orange"/>
+
   <!-- Operators -->
   <style name="def:operator"                foreground="green"/>
 
@@ -88,7 +103,7 @@
   <style name="def:preprocessor"            foreground="violet"/>
   <style name="def:error"                   foreground="red" bold="true"/>
   <style name="def:note"                    foreground="magenta" bold="true"/>
-  <style name="def:underlined"              italic="true" underline="single"/>
+  <style name="def:net-address"             italic="true" underline="single"/>
 
   <!-- Heading styles, uncomment to enable -->
   <!--

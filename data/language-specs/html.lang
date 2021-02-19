@@ -64,10 +64,21 @@
     </context>
 
     <!-- This is a placeholder context intended to be <replace>d
-         in languages like php that need to embedd contexts inside
-         html tags and attributes.
+         in languages like PHP that need to embed contexts inside
+         HTML tags and attributes.
     -->
     <context id="embedded-lang-hook">
+      <start>\%{def:never-match}</start>
+      <end></end>
+    </context>
+
+    <!-- Certain HTML tags (e.g. h1) require container contexts that
+         exclude highlighting from embedding languages. Languages can
+         replace this context when they need to highlight all content,
+         but not inside HTML tags and attributes.
+    -->
+
+    <context id="embedded-lang-hook-content">
       <start>\%{def:never-match}</start>
       <end></end>
     </context>
@@ -103,6 +114,7 @@
                 <context sub-pattern="0" where="start" style-ref="tag"/>
                 <context sub-pattern="0" where="end" style-ref="tag"/>
                 <context ref="embedded-lang-hook"/>
+                <context ref="embedded-lang-hook-content"/>
               </include>
             </context>
           </include>
@@ -121,6 +133,7 @@
                   <match>(?=\%{h1-close})</match>
                 </context>
                 <context ref="embedded-lang-hook"/>
+                <context ref="embedded-lang-hook-content"/>
                 <context ref="tag"/>
               </include>
             </context>
@@ -144,6 +157,7 @@
                   <match>(?=\%{h2-close})</match>
                 </context>
                 <context ref="embedded-lang-hook"/>
+                <context ref="embedded-lang-hook-content"/>
                 <context ref="tag"/>
               </include>
             </context>
@@ -167,6 +181,7 @@
                   <match>(?=\%{h3-close})</match>
                 </context>
                 <context ref="embedded-lang-hook"/>
+                <context ref="embedded-lang-hook-content"/>
                 <context ref="tag"/>
               </include>
             </context>
@@ -190,6 +205,7 @@
                   <match>(?=\%{h4-close})</match>
                 </context>
                 <context ref="embedded-lang-hook"/>
+                <context ref="embedded-lang-hook-content"/>
                 <context ref="tag"/>
               </include>
             </context>
@@ -213,6 +229,7 @@
                   <match>(?=\%{h5-close})</match>
                 </context>
                 <context ref="embedded-lang-hook"/>
+                <context ref="embedded-lang-hook-content"/>
                 <context ref="tag"/>
               </include>
             </context>
@@ -236,6 +253,7 @@
                   <match>(?=\%{h6-close})</match>
                 </context>
                 <context ref="embedded-lang-hook"/>
+                <context ref="embedded-lang-hook-content"/>
                 <context ref="tag"/>
               </include>
             </context>
@@ -248,7 +266,8 @@
       </include>
     </context>
 
-    <define-regex id="attribute-name">[a-z0-9:_-]+</define-regex>
+    <!-- See https://gitlab.gnome.org/GNOME/gtksourceview/commit/5385eb27720875bc144d54ccbd00d1613c41f7e0 -->
+    <define-regex id="attribute-name">[^\x00\t\n\f\r "'/&lt;=&gt;\x{007F}-\x{009F}\x{FDD0}-\x{FDEF}\x{FFFE}\x{FFFF}\x{1FFFE}\x{1FFFF}\x{2FFFE}\x{2FFFF}\x{3FFFE}\x{3FFFF}\x{4FFFE}\x{4FFFF}\x{5FFFE}\x{5FFFF}\x{6FFFE}\x{6FFFF}\x{7FFFE}\x{7FFFF}\x{8FFFE}\x{8FFFF}\x{9FFFE}\x{9FFFF}\x{AFFFE}\x{AFFFF}\x{BFFFE}\x{BFFFF}\x{CFFFE}\x{CFFFF}\x{DFFFE}\x{DFFFF}\x{EFFFE}\x{EFFFF}\x{FFFFE}\x{FFFFF}\x{10FFFE}\x{10FFFF}]+</define-regex>
 
     <context id="generic-tag">
       <include>
@@ -307,12 +326,24 @@
           <include>
             <context sub-pattern="0" where="start" style-ref="tag"/>
             <context sub-pattern="0" where="end" style-ref="tag"/>
-            <context ref="embedded-lang-hook"/>
             <context ref="css:css"/>
           </include>
         </context>
       </include>
     </context>
+
+    <context id="css-embedded-lang-hook">
+      <include>
+        <context end-parent="true">
+          <start>(?=&lt;/style(?:&gt;|\s|$))</start>
+          <end>\%{def:always-match}</end>
+        </context>
+        <context ref="embedded-lang-hook"/>
+        <context ref="css:embedded-lang-hook" original="true"/>
+      </include>
+    </context>
+
+    <replace id="css:embedded-lang-hook" ref="css-embedded-lang-hook"/>
 
     <context id="script" class="no-spell-check">
       <start>&lt;script\%]</start>
@@ -330,15 +361,28 @@
           <include>
             <context sub-pattern="0" where="start" style-ref="tag"/>
             <context sub-pattern="0" where="end" style-ref="tag"/>
-            <context ref="embedded-lang-hook"/>
             <context ref="js:js"/>
           </include>
         </context>
       </include>
     </context>
 
+    <context id="js-embedded-lang-hooks">
+      <include>
+        <context end-parent="true">
+          <start>(?=&lt;/script(?:&gt;|\s|$))</start>
+          <end>\%{def:always-match}</end>
+        </context>
+        <context ref="embedded-lang-hook"/>
+        <context ref="js:embedded-lang-hooks" original="true"/>
+      </include>
+    </context>
+
+    <replace id="js:embedded-lang-hooks" ref="js-embedded-lang-hooks"/>
+
     <context id="tag" class="no-spell-check">
-      <start>&lt;/?[a-z0-9_-]+</start>
+      <!-- See https://gitlab.gnome.org/GNOME/gtksourceview/commit/5385eb27720875bc144d54ccbd00d1613c41f7e0 -->
+      <start>&lt;/?[a-z][^\x00\t\n\f\r /&gt;\x{007F}-\x{009F}\x{FDD0}-\x{FDEF}\x{FFFE}\x{FFFF}\x{1FFFE}\x{1FFFF}\x{2FFFE}\x{2FFFF}\x{3FFFE}\x{3FFFF}\x{4FFFE}\x{4FFFF}\x{5FFFE}\x{5FFFF}\x{6FFFE}\x{6FFFF}\x{7FFFE}\x{7FFFF}\x{8FFFE}\x{8FFFF}\x{9FFFE}\x{9FFFF}\x{AFFFE}\x{AFFFF}\x{BFFFE}\x{BFFFF}\x{CFFFE}\x{CFFFF}\x{DFFFE}\x{DFFFF}\x{EFFFE}\x{EFFFF}\x{FFFFE}\x{FFFFF}\x{10FFFE}\x{10FFFF}]*</start>
       <end>/?&gt;</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="tag"/>

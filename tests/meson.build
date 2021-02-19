@@ -8,8 +8,8 @@ tests_sources = {
                     'int2str': ['test-int2str.c'],
                      'search': ['test-search.c'],
         'search-performances': ['test-search-performances.c'],
+                   'snippets': ['test-snippets.c'],
               'space-drawing': ['test-space-drawing.c'],
-  'undo-manager-performances': ['test-undo-manager-performances.c'],
                      'widget': ['test-widget.c'],
 }
 
@@ -19,6 +19,11 @@ tests_resources = {
       'widget': 'test-widget.gresource.xml',
 }
 
+tests_deps = [gtksource_dep]
+if cc.get_id() == 'msvc'
+  tests_deps += [core_dep]
+endif
+
 foreach test_name, test_sources: tests_sources
   if tests_resources.has_key(test_name)
     test_sources += gnome.compile_resources(
@@ -27,10 +32,21 @@ foreach test_name, test_sources: tests_sources
     )
   endif
 
+  # Special case for installed tests
+  if get_option('install_tests')
+    if test_name == 'widget'
+      executable('gtksourceview@0@-widget'.format(api_version), test_sources,
+              c_args: tests_c_args,
+        dependencies: tests_deps,
+             install: true,
+      )
+    endif
+  endif
+
   # MSVC builds: We need items from the main GtkSourceView .lib as
   # well as the static core lib
   executable('test-@0@'.format(test_name), test_sources,
           c_args: tests_c_args,
-    dependencies: cc.get_id() == 'msvc' ? [gtksource_dep, core_dep] : [gtksource_dep],
+    dependencies: tests_deps,
   )
 endforeach

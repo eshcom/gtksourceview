@@ -33,6 +33,7 @@
   <color name="base1"   value="#93A1A1"/>
   <color name="base2"   value="#EEE8D5"/>
   <color name="base3"   value="#FDF6E3"/>
+  <color name="base4"   value="#C8CCC2"/>
   <color name="yellow"  value="#B58900"/>
   <color name="orange"  value="#CB4B16"/>
   <color name="red"     value="#DC322F"/>
@@ -50,7 +51,9 @@
   <style name="cursor"                      foreground="base01"/>
   <style name="current-line"                background="base2"/>
   <style name="line-numbers"                foreground="base1" background="base2"/>
+  <style name="snippet-focus"               foreground="base1" background="base2"/>
   <style name="background-pattern"          background="base3-2-blend"/>
+  <style name="draw-spaces"                 foreground="base4"/>
 
   <!-- Bracket Matching -->
   <style name="bracket-match"               foreground="base3" background="base1"/>
@@ -80,6 +83,20 @@
   <!-- Types -->
   <style name="def:type"                    foreground="yellow"/>
 
+  <!-- Markup -->
+  <style name="def:emphasis"                italic="true"/>
+  <style name="def:strong-emphasis"         foreground="orange"/>
+  <style name="def:inline-code"             foreground="blue"/>
+  <style name="def:insertion"               underline="single"/>
+  <style name="def:deletion"                strikethrough="true"/>
+  <style name="def:link-text"               foreground="base1"/>
+  <style name="def:link-symbol"             foreground="base1" bold="true"/>
+  <style name="def:link-destination"        italic="true" underline="single"/>
+  <style name="def:heading"                 foreground="yellow"/>
+  <style name="def:thematic-break"          foreground="yellow"/>
+  <style name="def:preformatted-section"    foreground="blue"/>
+  <style name="def:list-marker"             foreground="orange"/>
+
   <!-- Operators -->
   <style name="def:operator"                foreground="green"/>
 
@@ -87,7 +104,7 @@
   <style name="def:preprocessor"            foreground="violet"/>
   <style name="def:error"                   foreground="red" bold="true"/>
   <style name="def:note"                    foreground="magenta" bold="true"/>
-  <style name="def:underlined"              italic="true" underline="single"/>
+  <style name="def:net-address"             italic="true" underline="single"/>
 
   <!-- Heading styles, uncomment to enable -->
   <!--

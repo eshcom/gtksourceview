@@ -4,7 +4,7 @@
  This file is part of GtkSourceView
 
  Author: Jeffery To <jeffery.to@gmail.com>
- Copyright (C) 2018 Jeffery To <jeffery.to@gmail.com>
+ Copyright (C) 2018-2020 Jeffery To <jeffery.to@gmail.com>
 
  GtkSourceView is free software; you can redistribute it and/or
  modify it under the terms of the GNU Lesser General Public
@@ -58,29 +58,50 @@
 
   <default-regex-options case-sensitive="false"/>
 
-  <keyword-char-class>[a-z0-9_-]</keyword-char-class>
+  <!-- from css:keyword-code-point -->
+  <keyword-char-class>[^\x{0}-\x{2C}\x{2E}\x{2F}\x{3A}-\x{40}\x{5B}\x{5D}\x{5E}\x{60}\x{7B}-\x{7F}]</keyword-char-class>
 
   <definitions>
 
     <!-- global -->
 
-    <context id="sass-c-like-comment-multiline" style-ref="def:comment" class-disabled="no-spell-check" class="comment">
+    <context id="embedded-lang-hook"/>
+
+    <context id="scss-embedded-lang-hook">
+      <include>
+        <context ref="embedded-lang-hook"/>
+        <context ref="css:embedded-lang-hook" original="true"/>
+      </include>
+    </context>
+
+    <context id="scss-multiline-comment" style-ref="css:comment" class-disabled="no-spell-check" class="comment">
       <start>/\*</start>
       <end>\*/</end>
       <include>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="interpolation"/>
+        <context ref="def:in-comment"/>
+      </include>
+    </context>
+
+    <context id="single-line-comment" style-ref="css:comment" end-at-line-end="true" class-disabled="no-spell-check" class="comment">
+      <start>//</start>
+      <include>
+        <context ref="css:embedded-lang-hook"/>
+        <!-- line continuations not allowed -->
         <context ref="def:in-comment"/>
       </include>
     </context>
 
     <context id="scss-comment">
       <include>
-        <context ref="def:c-like-comment"/>
-        <context ref="sass-c-like-comment-multiline"/>
-        <context ref="def:c-like-close-comment-outside-comment"/>
+        <context ref="single-line-comment"/>
+        <context ref="css:comment" original="true"/>
       </include>
     </context>
 
+    <replace id="css:embedded-lang-hook" ref="scss-embedded-lang-hook"/>
+    <replace id="css:multiline-comment" ref="scss-multiline-comment"/>
     <replace id="css:comment" ref="scss-comment"/>
 
 
@@ -92,6 +113,7 @@
       <include>
         <context sub-pattern="0" where="start" style-ref="interpolation"/>
         <context sub-pattern="0" where="end" style-ref="interpolation"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="css:any-value"/>
       </include>
@@ -112,12 +134,10 @@
          a division operation -->
     <context id="arithmetic-operator" style-ref="operator-symbol">
       <match extended="true">
-        (
-          [+*%] |
-          (?&lt;! \%{css:single-identifier-char} )
-          -
-          (?! \%{css:single-identifier-char} )
-        )
+        [+*%] |
+        (?&lt;! \%{css:keyword-code-point} )
+        -
+        (?! \%{css:keyword-code-point} )
       </match>
     </context>
 
@@ -126,10 +146,12 @@
     </context>
 
     <context id="comparison-operator" style-ref="operator-symbol">
-      <match>(&lt;=?|&gt;=?|[=!]=)</match>
+      <match>&lt;=?|&gt;=?|[=!]=</match>
     </context>
 
     <context id="logical-operator" style-ref="logical-operator">
+      <prefix>\%{css:keyword-start}</prefix>
+      <suffix>\%{css:keyword-end}</suffix>
       <keyword>and</keyword>
       <keyword>not</keyword>
       <keyword>or</keyword>
@@ -139,11 +161,15 @@
     <!-- Sass data types -->
 
     <context id="boolean" style-ref="boolean">
+      <prefix>\%{css:keyword-start}</prefix>
+      <suffix>\%{css:keyword-end}</suffix>
       <keyword>false</keyword>
       <keyword>true</keyword>
     </context>
 
     <context id="null" style-ref="null">
+      <prefix>\%{css:keyword-start}</prefix>
+      <suffix>\%{css:keyword-end}</suffix>
       <keyword>null</keyword>
     </context>
 
@@ -157,6 +183,7 @@
       <include>
         <context sub-pattern="0" where="start" style-ref="list-delimiter"/>
         <context sub-pattern="0" where="end" style-ref="list-delimiter"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="css:any-value"/>
       </include>
@@ -169,6 +196,7 @@
       <include>
         <context sub-pattern="0" where="start" style-ref="group-delimiter"/>
         <context sub-pattern="0" where="end" style-ref="group-delimiter"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="css:string-value"/>
       </include>
@@ -180,6 +208,7 @@
       <include>
         <context sub-pattern="0" where="start" style-ref="group-delimiter"/>
         <context sub-pattern="0" where="end" style-ref="group-delimiter"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="css:data-value"/>
       </include>
@@ -195,6 +224,7 @@
       <include>
         <context sub-pattern="0" where="start" style-ref="group-delimiter"/>
         <context sub-pattern="0" where="end" style-ref="group-delimiter"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="css:any-value"/>
         <context ref="css:colon"/> <!-- for maps -->
@@ -221,14 +251,18 @@
     </context>
 
     <context id="scss-url">
-      <start>url\(</start>
+      <start extended="true">
+        \%{css:keyword-start} url \(
+      </start>
       <end>\)</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="css:function"/>
         <context sub-pattern="0" where="end" style-ref="css:function"/>
+        <context ref="css:embedded-lang-hook"/>
         <!-- only accept multi-line comments because // is part of urls -->
-        <context ref="sass-c-like-comment-multiline"/>
-        <context ref="def:c-like-close-comment-outside-comment"/>
+        <context ref="css:comment" original="true"/>
+        <context ref="interpolation"/>
+        <context ref="css:escape" ignore-style="true"/>
         <context ref="css:string-value"/>
       </include>
     </context>
@@ -305,6 +339,7 @@
         <context ref="logical-operator"/>
         <context ref="comparison-operator"/>
         <context ref="arithmetic-operator"/>
+        <context ref="css:name-value" original="true"/>
         <context ref="css:slash"/>
         <context ref="css:comma"/>
       </include>
@@ -316,11 +351,15 @@
     <!-- Sass modifiers -->
 
     <context id="variable-assignment-modifiers" style-ref="css:modifier">
+      <prefix>\%{css:keyword-start}</prefix>
+      <suffix>\%{css:keyword-end}</suffix>
       <keyword>default</keyword>
       <keyword>global</keyword>
     </context>
 
     <context id="at-extend-modifiers" style-ref="css:modifier">
+      <prefix>\%{css:keyword-start}</prefix>
+      <suffix>\%{css:keyword-end}</suffix>
       <keyword>optional</keyword>
     </context>
 
@@ -358,6 +397,7 @@
       <include>
         <context sub-pattern="0" where="start" style-ref="css:block-delimiter"/>
         <context sub-pattern="0" where="end" style-ref="css:block-delimiter"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="css:declaration"/>
       </include>
@@ -380,42 +420,154 @@
     <context id="scss-declaration-value">
       <start extended="true">
         (?(DEFINE)
-          (?&lt;interpolation&gt;  # recursive subpattern to find matching brackets
+          (?&lt;escape_interpolation_start&gt; (?: \\ \#{   )+ )
+          (?&lt;escape_comment_start&gt;       (?: \\ /[/*] )+ )
+          (?&lt;escape&gt;                     (?: \\ .     )+ )
+
+          (?&lt;interpolation_start_chars&gt;
+            (?: (?: \# (?! { ) )+ | (?: (?&lt;! \# ) { )+ )
+          )
+          (?&lt;comment_start_chars&gt;
+            (?: (?: (?&lt;! / ) / (?! [/*] ) )+ | (?: (?&lt;! / ) \* )+ )
+          )
+          (?&lt;comment_end_chars&gt;
+            (?: (?: \* (?! / ) )+ | (?: (?&lt;! \* ) / )+ )
+          )
+
+          (?&lt;single_line_comment&gt; // .* )
+
+          (?&lt;interpolation&gt;  # recursive subpattern to find matching braces
             \#{
             (?:
               (?&gt;
                 (?:
-                  [^#{}]+ |
-                  (?! \#{ | } ) .
+                  [^\\}#{(/*"']+ |
+                  (?&amp;escape_interpolation_start) |
+                  (?&amp;escape_comment_start) |
+                  (?&amp;escape) |
+                  (?&amp;interpolation_start_chars) |
+                  (?&amp;comment_start_chars)
+                )+
+              ) |
+              (?&amp;interpolation) |
+              (?&amp;parentheses) |
+              (?&amp;single_line_comment) |
+              (?&amp;multiline_comment) |
+              (?&amp;double_quote_string) |
+              (?&amp;single_quote_string)
+            )*
+            }
+          )
+
+          (?&lt;parentheses&gt;  # recursive subpattern to find matching parentheses
+            \(
+            (?:
+              (?&gt;
+                (?:
+                  [^\\)(#{/*"']+ |
+                  (?&amp;escape_interpolation_start) |
+                  (?&amp;escape_comment_start) |
+                  (?&amp;escape) |
+                  (?&amp;interpolation_start_chars) |
+                  (?&amp;comment_start_chars)
+                )+
+              ) |
+              (?&amp;interpolation) |
+              (?&amp;parentheses) |
+              (?&amp;single_line_comment) |
+              (?&amp;multiline_comment) |
+              (?&amp;double_quote_string) |
+              (?&amp;single_quote_string)
+            )*
+            \)
+          )
+
+          (?&lt;multiline_comment&gt;  # subpattern to find matching comment delimiters
+            /\*
+            (?:
+              (?&gt;
+                (?:
+                  [^*/#{]+ |
+                  # no escapes
+                  (?&amp;comment_end_chars) |
+                  (?&amp;interpolation_start_chars)
                 )+
               ) |
               (?&amp;interpolation)
             )*
-            }
+            \*/
+          )
+
+          (?&lt;double_quote_string&gt;  # subpattern to find matching double quotes
+            "
+            (?:
+              (?&gt;
+                (?:
+                  [^\\"#{]+ |
+                  (?&amp;escape_interpolation_start) |
+                  (?&amp;escape) |
+                  (?&amp;interpolation_start_chars)
+                )+
+              ) |
+              (?&amp;interpolation)
+            )*
+            "
+          )
+
+          (?&lt;single_quote_string&gt;  # subpattern to find matching single quotes
+            '
+            (?:
+              (?&gt;
+                (?:
+                  [^\\'#{]+ |
+                  (?&amp;escape_interpolation_start) |
+                  (?&amp;escape) |
+                  (?&amp;interpolation_start_chars)
+                )+
+              ) |
+              (?&amp;interpolation)
+            )*
+            '
           )
         )
+
         :
         (?:
-          (?!                                 # not the start of a
-            \%{css:single-identifier-char} |  #   pseudo-class
-            [:\\] |                           #   pseudo-element, escape
-            \#{                               #   interpolation
-          ) |                                 # or
-          (?=                                 # ends like a normal declaration
+          (?!                              # not the start of a
+            \%{css:keyword-code-point} |   #   pseudo-class
+            [:\\] |                        #   pseudo-element, escape
+            \#{ |                          #   interpolation
+            /\*                            #   comment
+          ) |                              # or
+          (?=                              # ends like a normal declaration
             (?&gt;
               (?:
-                [^;}{#]+ |
-                (?&amp;interpolation)+ |
-                \#+
+                (?&gt;
+                  (?:
+                    [^\\;}{#(/*"']+ |
+                    (?&amp;escape_interpolation_start) |
+                    (?&amp;escape_comment_start) |
+                    (?&amp;escape) |
+                    (?: \# (?! { ) )+ |  # interpolation_start_chars allows {
+                    (?&amp;comment_start_chars)
+                  )+
+                ) |
+                (?&amp;interpolation) |
+                (?&amp;parentheses) |
+                (?&amp;single_line_comment) |
+                (?&amp;multiline_comment) |
+                (?&amp;double_quote_string) |
+                (?&amp;single_quote_string)
               )*
             )
-            \%{css:declaration-value-end}     #   with a semicolon or at the end of a block
+            \%{css:declaration-value-end}  #   with a semicolon or at the end of a block
           )
         )
       </start>
       <end>\%{css:declaration-value-end}</end> <!-- nested-properties has end-parent="true" -->
       <include>
         <context sub-pattern="0" where="start" style-ref="css:delimiter"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="css:declaration-value-content"/>
       </include>
@@ -473,9 +625,12 @@
     -->
 
     <context id="at-extend">
-      <start>@extend\%]</start>
+      <start extended="true">
+        @extend \%{css:keyword-end}
+      </start>
       <include>
         <context sub-pattern="0" where="start" style-ref="css:at-rule"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="css:selector"/>
         <context ref="css:modifier"/>
@@ -488,11 +643,15 @@
     -->
 
     <context id="at-at-root-query-type" style-ref="css:property-name">
+      <prefix>\%{css:keyword-start}</prefix>
+      <suffix>\%{css:keyword-end}</suffix>
       <keyword>without</keyword>
       <keyword>with</keyword>
     </context>
 
     <context id="at-at-root-query-directive" style-ref="css:keyword">
+      <prefix>\%{css:keyword-start}</prefix>
+      <suffix>\%{css:keyword-end}</suffix>
       <keyword>all</keyword>
       <keyword>media</keyword>
       <keyword>rule</keyword>
@@ -504,6 +663,7 @@
       <end>\%{css:test-value-end}</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="css:delimiter"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="interpolation"/>
         <context ref="variable"/>
@@ -517,6 +677,7 @@
       <include>
         <context sub-pattern="0" where="start" style-ref="css:test-delimiter"/>
         <context sub-pattern="0" where="end" style-ref="css:test-delimiter"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="interpolation"/>
         <context ref="variable"/>
@@ -526,9 +687,12 @@
     </context>
 
     <context id="at-at-root">
-      <start>@at-root\%]</start>
+      <start extended="true">
+        @at-root \%{css:keyword-end}
+      </start>
       <include>
         <context sub-pattern="0" where="start" style-ref="css:at-rule"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="css:selector"/>
         <context ref="at-at-root-query"/>
@@ -543,9 +707,12 @@
     -->
 
     <context id="at-debug-warn-error">
-      <start>@(debug|warn|error)\%]</start>
+      <start extended="true">
+        @ (?: debug | warn | error ) \%{css:keyword-end}
+      </start>
       <include>
         <context sub-pattern="0" where="start" style-ref="css:at-rule"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="css:any-value"/>
         <context ref="css:at-rule-delimiter"/>
@@ -559,9 +726,12 @@
     -->
 
     <context id="at-if-else-if">
-      <start>@(if|else\s+if)\%]</start>
+      <start extended="true">
+        @ (?: if | else \s+ if ) \%{css:keyword-end}
+      </start>
       <include>
         <context sub-pattern="0" where="start" style-ref="css:at-rule"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="css:any-value"/>
         <context ref="css:at-rule-css-block"/>
@@ -569,9 +739,12 @@
     </context>
 
     <context id="at-else">
-      <start>@else\%]</start>
+      <start extended="true">
+        @else \%{css:keyword-end}
+      </start>
       <include>
         <context sub-pattern="0" where="start" style-ref="css:at-rule"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="css:at-rule-css-block"/>
       </include>
@@ -582,15 +755,20 @@
     -->
 
     <context id="at-for-keyword" style-ref="css:at-rule-operator">
+      <prefix>\%{css:keyword-start}</prefix>
+      <suffix>\%{css:keyword-end}</suffix>
       <keyword>from</keyword>
       <keyword>through</keyword>
       <keyword>to</keyword>
     </context>
 
     <context id="at-for">
-      <start>@for\%]</start>
+      <start extended="true">
+        @for \%{css:keyword-end}
+      </start>
       <include>
         <context sub-pattern="0" where="start" style-ref="css:at-rule"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="at-for-keyword"/>
         <context ref="variable"/>
@@ -604,13 +782,18 @@
     -->
 
     <context id="at-each-keyword" style-ref="css:at-rule-operator">
+      <prefix>\%{css:keyword-start}</prefix>
+      <suffix>\%{css:keyword-end}</suffix>
       <keyword>in</keyword>
     </context>
 
     <context id="at-each">
-      <start>@each\%]</start>
+      <start extended="true">
+        @each \%{css:keyword-end}
+      </start>
       <include>
         <context sub-pattern="0" where="start" style-ref="css:at-rule"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="at-each-keyword"/>
         <context ref="variable"/>
@@ -625,9 +808,12 @@
     -->
 
     <context id="at-while">
-      <start>@while\%]</start>
+      <start extended="true">
+        @while \%{css:keyword-end}
+      </start>
       <include>
         <context sub-pattern="0" where="start" style-ref="css:at-rule"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="css:any-value"/>
         <context ref="css:at-rule-css-block"/>
@@ -644,15 +830,19 @@
       <include>
         <context sub-pattern="0" where="start" style-ref="mixin-name"/>
         <context sub-pattern="0" where="end" style-ref="mixin-name"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="css:function-content"/>
       </include>
     </context>
 
     <context id="at-mixin">
-      <start>@mixin\%]</start>
+      <start extended="true">
+        @mixin \%{css:keyword-end}
+      </start>
       <include>
         <context sub-pattern="0" where="start" style-ref="css:at-rule"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="css:name" style-ref="mixin-name"/>
         <context ref="mixin-parameters"/>
@@ -665,9 +855,12 @@
     -->
 
     <context id="at-include">
-      <start>@include\%]</start>
+      <start extended="true">
+        @include \%{css:keyword-end}
+      </start>
       <include>
         <context sub-pattern="0" where="start" style-ref="css:at-rule"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="css:name" style-ref="mixin-name"/>
         <context ref="mixin-parameters"/>
@@ -681,9 +874,12 @@
     -->
 
     <context id="at-content">
-      <start>@content\%]</start>
+      <start extended="true">
+        @content \%{css:keyword-end}
+      </start>
       <include>
         <context sub-pattern="0" where="start" style-ref="css:at-rule"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="css:at-rule-delimiter"/>
       </include>
@@ -699,15 +895,19 @@
       <include>
         <context sub-pattern="0" where="start" style-ref="css:function"/>
         <context sub-pattern="0" where="end" style-ref="css:function"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="css:function-content"/>
       </include>
     </context>
 
     <context id="at-function">
-      <start>@function\%]</start>
+      <start extended="true">
+        @function \%{css:keyword-end}
+      </start>
       <include>
         <context sub-pattern="0" where="start" style-ref="css:at-rule"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <!-- we define it this way because there can be whitespace
              between the function name and the parentheses -->
@@ -722,9 +922,12 @@
     -->
 
     <context id="at-return">
-      <start>@return\%]</start>
+      <start extended="true">
+        @return \%{css:keyword-end}
+      </start>
       <include>
         <context sub-pattern="0" where="start" style-ref="css:at-rule"/>
+        <context ref="css:embedded-lang-hook"/>
         <context ref="css:comment"/>
         <context ref="css:any-value"/>
         <context ref="css:at-rule-delimiter"/>
@@ -796,8 +999,8 @@
     <context id="parent-combinator">
       <match>(&amp;)(\%{css:identifier-chars}?)</match>
       <include>
-        <context sub-pattern="1"  style-ref="css:combinator"/>
-        <context sub-pattern="2"  style-ref="selector-fragment"/>
+        <context sub-pattern="1" style-ref="css:combinator"/>
+        <context sub-pattern="2" style-ref="selector-fragment"/>
       </include>
     </context>
 
@@ -827,10 +1030,10 @@
       </include>
     </context>
 
-    <context id="scss-nth-pseudo-class-argument-content">
+    <context id="scss-nth-pseudo-class-content">
       <include>
         <context ref="interpolation"/>
-        <context ref="css:nth-pseudo-class-argument-content" original="true"/>
+        <context ref="css:nth-pseudo-class-content" original="true"/>
       </include>
     </context>
 
@@ -843,7 +1046,7 @@
 
     <replace id="css:simple-selector" ref="scss-simple-selector"/>
     <replace id="css:combinator" ref="scss-combinator"/>
-    <replace id="css:nth-pseudo-class-argument-content" ref="scss-nth-pseudo-class-argument-content"/>
+    <replace id="css:nth-pseudo-class-content" ref="scss-nth-pseudo-class-content"/>
     <replace id="css:selector" ref="scss-selector"/>
 
 

@@ -1,3 +1,115 @@
+News in 4.99.0, 2021-02-12
+--------------------------
+
+GtkSourceView 4.99.0 is a beta release targeting GTK 4 and will eventually
+become GtkSourceView 5.0.
+
+It is the largest release of GtkSourceView in many releases and contains new
+subsystems and performance improvements. More than 300 commits are part of this
+release touching everything from syntax highlighting to a new snippet engine.
+
+As GtkSourceView 4.99 moves to using PCRE2, it is possible that some language
+definitions will need tweaking for differences between PCRE and PCRE2. So far,
+very few changes were necessary within the GtkSourceView codebase but external
+language specifications may require some tweaks. In particular, improper
+escaping is the only incompatability seen thus far.
+
+* Improvements when converting Pango styling to CSS
+* Build system improvements
+* GObject modernization
+* A new completion engine has been added that reduces overhead and fits with
+  GTK 4 lazy lists more closely. It is largely based on the code and design
+  from GNOME Builder.
+* GtkSourceGutterRenderers are now a GtkWidget allowing more interesting
+  features to be implemented by applications.
+* Undo management was moved into GTK 4 directly and is no longer part of
+  GtkSourceView.
+* Syntax highlighting has moved to PCRE2 and utilizes a JIT when available.
+* GtkSourceBuffer has a new "cursor-moved" signal.
+* A new font "Builder Blocks" from GNOME Builder has been bundled for use
+  in the GtkSourceMap.
+* To speed up gutter operations, a new GtkSourceLines abstraction has been
+  added which allows fewer passes across the source buffer to extract features
+  for display.
+* A new snippet engine based originally upon GNOME Builder's but with a
+  new snippet language based on XML similar to language-specs and
+  style-schemes.
+* A new "Assistant" abstraction which can be used for tooltips and eventually
+  hover providers.
+* Updates to go.lang, cmake.lang, meson.lang, csharp.lang.
+* Translation updates
+
+News in 4.8.0, 2020-09-12
+-------------------------
+* Translation updates
+
+News in 4.7.90, 2020-08-07
+--------------------------
+* Bump GTK requirement to 3.24 for gdk_window_move_to_rect()
+* Use gdk_window_move_to_rect() to more reliably position completion windows
+* erb.lang: initial support for ERB
+* javascript.lang, typescript.lang: various correctness and performance
+  improvements.
+* Translation updates
+
+News in 4.6.1, 2020-06-26
+-------------------------
+* Fix various G-I annotations
+* Improve draw-spaces coloring in solarized-light
+* javascript.lang: Performance improvements
+* c.lang: Fixes for #include preprocessor
+* sql.lang: Language completeness improvements
+* latex.lang: additional keywords
+* sh.lang: improved parameter expansion
+* yara.lang: initial support for YARA
+* Translation updates
+
+News in 4.6.0, 2020-03-06
+-------------------------
+* cpp.lang: add C++20 keywords
+* commonlisp.lang: add format directives
+* Translation updates
+
+News in 4.5.91, 2020-02-14
+--------------------------
+* GObject Introspection fixes
+* Removed use of g_assert() in favor of alternatives in unit tests so
+  distribution unit testing is more reliable
+* Robustness improvements in internal GtkTextIter movements
+* Style scheme improvements for recent GTK 3 theme styling changes
+* Build system improvements to support -Bsymbolic, -Wl,-z,relro,
+  -Wl,-z,now and -Wl,-z,defs
+* Build improvements for Windows, FreeBSD, and macOS
+* cmake.lang: track CMake 3.13 changes
+* kotlin.lang: register *.kts glob extension
+* gradle.lang: register *.grandle glob extension
+* php.lang: Large redesigned PHP lang including support for
+  unicode and improved heredoc
+* sh.lang: Many improvements including various GNU bash extensions
+* meson.lang: Support for string escape sequences
+* javascript.lang: Redesign of JavaScript language spec to be more flexible
+  and reusable from other languages which support JS.
+* jsx.lang: Initial support for JSX
+* jsdoc.lang: Initial support for JSDoc
+* objj.lang: Improvements using javascript improvements
+* asciidoc.lang: Improvements to use more generic markup styling
+* t2t.lang: Improvements to use more generic markup styling
+* css.lang: Redesign to be more flexible, support reuse and embedding, and
+  add various new CSS features
+* scss.lang: Improve integration with css.lang
+* less.lang: Improve integration with css.lang
+* ruby.lang: Improvements for string and escape string handling
+* html.lang: Improvements using embedded languages
+* go.lang: Improvements for escape sequences
+* commonlisp.lang: Initial support for Common Lisp
+* ftl.lang: Initial support for Mozilla's Fluent ftl
+* Translation updates
+
+I'd like to personally thank Jeffery To for the overwhelming amount of work
+they have put into reviewing and improving both language specs and style
+schemes this cycle. The number of improvements you see above are largely an
+example of their quality reviews and improvements!
+
 News in 4.4.0, 2019-09-09
 -------------------------
 * Set NO_AT_BRIDGE=1 when running automated tests

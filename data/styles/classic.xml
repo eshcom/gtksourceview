@@ -42,10 +42,12 @@
   <color name="purple"     value="#A020F0"/>
 
   <!-- Global Settings -->
+  <style name="line-numbers"                background="#rgba(0,0,0,0.005)"/>
   <style name="current-line"                background="#eeeeec"/>
   <style name="current-line-number"         background="#eeeeec"/>
   <style name="draw-spaces"                 foreground="#babdb6"/>
-  <style name="background-pattern"          background="#f3f3f3"/>
+  <style name="background-pattern"          background="#rgba(73,74,71,0.1)"/>
+  <style name="snippet-focus"               background="gray"/>
 
   <!-- Bracket Matching -->
   <style name="bracket-match"               foreground="white" background="gray"/>
@@ -75,12 +77,26 @@
   <!-- Types -->
   <style name="def:type"                    foreground="green" bold="true"/>
 
+  <!-- Markup -->
+  <style name="def:emphasis"                italic="true"/>
+  <style name="def:strong-emphasis"         foreground="bordeaux" bold="true"/>
+  <style name="def:inline-code"             foreground="cyan"/>
+  <style name="def:insertion"               underline="single"/>
+  <style name="def:deletion"                strikethrough="true"/>
+  <style name="def:link-text"               foreground="blue"/>
+  <style name="def:link-symbol"             foreground="blue" bold="true"/>
+  <style name="def:link-destination"        italic="true" underline="single"/>
+  <style name="def:heading"                 foreground="green" bold="true"/>
+  <style name="def:thematic-break"          foreground="green" bold="true"/>
+  <style name="def:preformatted-section"    foreground="cyan"/>
+  <style name="def:list-marker"             foreground="bordeaux" bold="true"/>
+
   <!-- Others -->
   <style name="def:preprocessor"            foreground="purple"/>
   <style name="def:error"                   background="red" bold="true"/>
   <style name="def:warning"                 background="yellow"/>
   <style name="def:note"                    foreground="blue" background="yellow" bold="true"/>
-  <style name="def:underlined"              italic="true" underline="single"/>
+  <style name="def:net-address"             italic="true" underline="single"/>
 
   <!-- Heading styles, uncomment to enable -->
   <!--
@@ -105,8 +121,7 @@
   <style name="xml:attribute-name"          foreground="violet"/>
   <style name="xml:namespace"               foreground="green" bold="true"/>
 
-  <style name="js:object"                   foreground="#2E8B57" bold="true"/>
-  <style name="js:constructors"             foreground="#008B8B"/>
+  <style name="js:built-in-constructor"     use-style="def:identifier"/>
 
   <style name="latex:display-math"          foreground="#6A5ACD"/>
   <style name="latex:command"               foreground="#2E8B57" bold="true"/>

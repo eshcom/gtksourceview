@@ -3,12 +3,10 @@
    "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd"
 [
  <!ENTITY % local.common.attrib "xmlns:xi CDATA #FIXED 'http://www.w3.org/2003/XInclude'">
- <!ENTITY % gtkdocentities SYSTEM "xml/gtkdocentities.ent">
- %gtkdocentities;
 ]>
 
 <chapter id="porting-guide-3-to-4">
-  <title>GtkSourceView 3 -> 4 Porting Guide</title>
+  <title>GtkSourceView 3 -> 4 Migration Guide</title>
 
   <refsect1>
     <title>GTK+ dependency</title>

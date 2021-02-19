@@ -34,6 +34,7 @@
     <style id="string"            name="String"                map-to="python:string"/>
     <style id="escaped-char"      name="Escaped Character"     map-to="python:escaped-char"/>
     <style id="format"            name="Format"                map-to="python:format"/>
+    <style id="string-conversion" name="String Conversion"     map-to="python:string-conversion"/>
     <style id="special-variable"  name="Special Variable"      map-to="python:special-variable"/>
     <style id="boolean"           name="Boolean"               map-to="python:boolean"/>
     <style id="floating-point"    name="Floating point number" map-to="python:floating-point"/>
@@ -43,12 +44,39 @@
     <style id="builtin-constant"  name="Builtin Constant"      map-to="python:builtin-constant"/>
     <style id="builtin-object"    name="Builtin Object"        map-to="python:builtin-object"/>
     <style id="builtin-function"  name="Builtin Function"      map-to="python:builtin-function"/>
+    <style id="function-name"     name="Function Name"         map-to="python:function-name"/>
+    <style id="class-name"        name="Class Name"            map-to="python:class-name"/>
+    <style id="decorator"         name="Decorator"             map-to="python:decorator"/>
   </styles>
 
   <definitions>
-    <define-regex id="identifier">[_a-zA-Z][_a-zA-Z0-9]*</define-regex>
+    <!-- https://docs.python.org/3/reference/lexical_analysis.html#identifiers
+         Underscore (U+005F LOW LINE) is a member of \p{Pc}, and so included in def:unicode-xid-continue
+    -->
+    <define-regex id="identifier" extended="true">
+      (?&gt; (?: _ | \%{def:unicode-xid-start} ) \%{def:unicode-xid-continue}* )
+    </define-regex>
     <define-regex id="number">[1-9][0-9]*</define-regex>
 
+    <define-regex id="identifier-path" extended="true">
+      (\%{identifier}\.)*\%{identifier}
+    </define-regex>
+    <define-regex id="relative-path" extended="true">
+      (\.*\%{identifier-path}|\.+)
+    </define-regex>
+
+    <!-- http://docs.python.org/lib/typesseq-strings.html -->
+    <context id="format" style-ref="format" extend-parent="false">
+      <match extended="true">
+        %                       # leading % sign
+        \(\%{identifier}\)?     # mapping key
+        [#0\-\ \+]*             # conversion flags
+        (\-?\%{number}|\*)?     # minimum field width
+        (\.(\-?\%{number}|\*))? # precision
+        (hlL)?                  # length modifier
+        [diouxXeEfFgGcrs%]      # conversion type
+      </match>
+    </context>
 
     <define-regex id="string-prefix">(b|B)?</define-regex>
     <define-regex id="raw-string-prefix">(r|R|rb|RB|rB|Rb|br|BR|bR|Br)</define-regex>
@@ -57,7 +85,7 @@
       <start>\%{string-prefix}"""</start>
       <end>"""</end>
       <include>
-        <context ref="python:format"/>
+        <context ref="format"/>
         <context ref="python:escaped-char"/>
       </include>
     </context>
@@ -66,7 +94,7 @@
       <start>\%{string-prefix}'''</start>
       <end>'''</end>
       <include>
-        <context ref="python:format"/>
+        <context ref="format"/>
         <context ref="python:escaped-char"/>
       </include>
     </context>
@@ -75,7 +103,7 @@
       <start>\%{string-prefix}"</start>
       <end>"</end>
       <include>
-        <context ref="python:format"/>
+        <context ref="format"/>
         <context ref="python:escaped-char"/>
         <context ref="def:line-continue"/>
       </include>
@@ -85,7 +113,7 @@
       <start>\%{string-prefix}'</start>
       <end>'</end>
       <include>
-        <context ref="python:format"/>
+        <context ref="format"/>
         <context ref="python:escaped-char"/>
         <context ref="def:line-continue"/>
       </include>
@@ -95,7 +123,7 @@
       <start>\%{raw-string-prefix}"""</start>
       <end>"""</end>
       <include>
-        <context ref="python:format"/>
+        <context ref="format"/>
       </include>
     </context>
 
@@ -103,7 +131,7 @@
       <start>\%{raw-string-prefix}'''</start>
       <end>'''</end>
       <include>
-        <context ref="python:format"/>
+        <context ref="format"/>
       </include>
     </context>
 
@@ -111,7 +139,7 @@
       <start>\%{raw-string-prefix}"</start>
       <end>"</end>
       <include>
-        <context ref="python:format"/>
+        <context ref="format"/>
         <context ref="def:line-continue"/>
       </include>
     </context>
@@ -120,9 +148,53 @@
       <start>\%{raw-string-prefix}'</start>
       <end>'</end>
       <include>
-        <context ref="python:format"/>
+        <context ref="format"/>
         <context ref="def:line-continue"/>
       </include>
+    </context>
+
+    <context id="module-handler-from">
+      <match extended="true">
+        (from)
+        \s+
+        (\%{relative-path})
+      </match>
+      <include>
+        <context sub-pattern="1" style-ref="module-handler"/>
+        <context sub-pattern="2" style-ref="class-name"/>
+      </include>
+    </context>
+
+    <!-- 'def' is also present in the 'keyword' context, but has a lower
+         priority, so 'def' is highlighted even if the function name doesn't match. -->
+    <context id="function-definition">
+      <match extended="true">
+        (def)
+        \s+
+        (\%{identifier})
+      </match>
+      <include>
+        <context sub-pattern="1" style-ref="keyword"/>
+        <context sub-pattern="2" style-ref="function-name"/>
+      </include>
+    </context>
+
+    <!-- 'class' is also present in the 'keyword' context, but has a lower
+         priority, so 'class' is highlighted even if the class name doesn't match. -->
+    <context id="class-definition">
+      <match extended="true">
+        (class)
+        \s+
+        (\%{identifier})
+      </match>
+      <include>
+        <context sub-pattern="1" style-ref="keyword"/>
+        <context sub-pattern="2" style-ref="class-name"/>
+      </include>
+    </context>
+
+    <context id="decorator" style-ref="decorator">
+      <match>@\%{identifier-path}</match>
     </context>
 
     <context id="python3" class="no-spell-check">
@@ -159,11 +231,11 @@
 
         <context ref="python:hex"/>
 
-        <context ref="python:module-handler-from"/>
+        <context ref="module-handler-from"/>
         <context ref="python:module-handler"/>
-        <context ref="python:function-definition"/>
-        <context ref="python:class-definition"/>
-        <context ref="python:decorator"/>
+        <context ref="function-definition"/>
+        <context ref="class-definition"/>
+        <context ref="decorator"/>
 
         <context ref="python:keywords"/>
         <context id="3x-only-keywords" style-ref="keyword">

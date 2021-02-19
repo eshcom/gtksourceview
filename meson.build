@@ -1,11 +1,13 @@
 project('gtksourceview', 'c',
-          version: '4.4.1',
+          version: '4.99.0',
           license: 'LGPL-2.1-or-later',
-    meson_version: '>= 0.49.0',
+    meson_version: '>= 0.50.0',
   default_options: [ 'c_std=gnu99',
                      'buildtype=debugoptimized',
                      'warning_level=2' ],
 )
+
+buildtype = get_option('buildtype')
 
 i18n = import('i18n')
 gnome = import('gnome')
@@ -18,7 +20,7 @@ version_major = version_arr[0].to_int()
 version_minor = version_arr[1].to_int()
 version_micro = version_arr[2].to_int()
 
-api_version = '4'
+api_version = '5'
 
 lib_version = '0.0.0'
 lib_version_arr = lib_version.split('.')
@@ -57,7 +59,6 @@ testdatadir = join_paths(datadir, 'installed-tests', package_string)
 docpath = join_paths(datadir, 'gtk-doc', 'html', package_string)
 
 # Options
-install_glade_catalog = get_option('glade_catalog')
 generate_gir = get_option('gir')
 generate_vapi = generate_gir and get_option('vapi')
 build_gtk_doc = get_option('gtk_doc')
@@ -65,33 +66,30 @@ build_gtk_doc = get_option('gtk_doc')
 # Dependencies
 cc = meson.get_compiler('c')
 
-glib_req_version = '2.48'
-gtk_req_version = '3.22'
+glib_req_version = '2.62'
+gtk_req_version = '3.99'
 
 libm_dep = cc.find_library('m', required: false)
 
 glib_req = '>= @0@'.format(glib_req_version)
 gtk_req = '>= @0@'.format(gtk_req_version)
 libxml_req = '>= 2.6'
-gladeui_req = '>= 3.9'
 introspection_req  = '>= 1.42.0'
 gtk_doc_req = '>= 1.25'
 fribidi_req = '>= 0.19.7'
+pcre2_req = '>= 10.21'
 
 glib_dep = dependency('glib-2.0', version: glib_req)
 gobject_dep = dependency('gobject-2.0', version: glib_req)
 gio_dep = dependency('gio-2.0', version: glib_req)
-gtk_dep = dependency('gtk+-3.0', version: gtk_req)
+gtk_dep = dependency('gtk4', version: gtk_req)
 libxml_dep = dependency('libxml-2.0', version: libxml_req, required: cc.get_id() != 'msvc')
 fribidi_dep = dependency('fribidi', version: fribidi_req)
+fontconfig_dep = dependency('fontconfig', required: false)
+pangoft2_dep = dependency('pangoft2', required: false)
+pcre2_dep = dependency('libpcre2-8', version: pcre2_req)
 
-gtk_quartz_dep = dependency('gtk+-quartz-3.0', version: gtk_doc_req, required: false)
-
-if install_glade_catalog
-  gladeui_dep = dependency('gladeui-2.0', version: gladeui_req)
-else
-  gladeui_dep = []
-endif
+gtk_quartz_dep = dependency('gtk4-quartz', version: gtk_doc_req, required: false)
 
 if generate_gir
   introspection_dep = dependency('gobject-introspection-1.0', version: introspection_req)
@@ -117,15 +115,7 @@ endif
 # for us.  Remove once Meson gains the ability to declare
 # deps in a declarative way
 if cc.get_id() == 'msvc' and not libxml_dep.found()
-  libxml_headers = ['xmlreader', 'parser']
-  libxml_headers_missing = false
-  foreach h: libxml_headers
-    if not cc.has_header('libxml/@0@.h'.format(h))
-      libxml_headers_missing = true
-    endif
-  endforeach
-  assert(not libxml_headers_missing, 'The libxml2 headers and libs are required')
-  libxml_dep = cc.find_library('libxml2')
+  libxml_dep = cc.find_library('libxml2', has_headers: ['libxml/xmlreader.h', 'libxml/parser.h'])
 endif
 
 xmllint_prg = find_program('xmllint', required: false)
@@ -134,9 +124,10 @@ glib_version_arr = glib_req_version.split('.')
 glib_major_version = glib_version_arr[0]
 glib_minor_version = glib_version_arr[1]
 
+# XXX: Override until GTK 4 is released
 gtk_version_arr = gtk_req_version.split('.')
-gtk_major_version = gtk_version_arr[0]
-gtk_minor_version = gtk_version_arr[1]
+gtk_major_version = '4' # gtk_version_arr[0]
+gtk_minor_version = '0' # gtk_version_arr[1]
 
 # Configurations
 add_project_arguments([
@@ -151,9 +142,18 @@ add_project_arguments([
 ], language: 'c')
 
 config_h = configuration_data()
-config_h.set_quoted('GSV_API_VERSION', api_version)
 config_h.set_quoted('GETTEXT_PACKAGE', package_string)
 config_h.set_quoted('DATADIR', datadir)
+config_h.set_quoted('HICOLORDIR', join_paths(datadir, 'icons/hicolor'))
+config_h.set_quoted('PACKAGE_DATADIR', pkgdatadir)
+config_h.set_quoted('GSV_API_VERSION_S', api_version)
+config_h.set('GSV_API_VERSION', api_version)
+config_h.set('PACKAGE_VERSION', version)
+config_h.set10('ENABLE_FONT_CONFIG', fontconfig_dep.found() and pangoft2_dep.found())
+
+if (version_minor % 2 == 1) or (version_minor >= 90)
+  config_h.set10('DEVELOPMENT_BUILD', 1)
+endif
 
 check_headers = [
   ['unistd.h', 'HAVE_UNISTD_H'],
@@ -164,6 +164,28 @@ foreach header: check_headers
     config_h.set(header.get(1), 1)
   endif
 endforeach
+
+# libsysprof-capture support
+if get_option('sysprof')
+  libsysprof_capture_dep = dependency('sysprof-capture-4',
+    required: get_option('sysprof'),
+    default_options: [
+      'enable_examples=false',
+      'enable_gtk=false',
+      'enable_tests=false',
+      'enable_tools=false',
+      'libsysprof=true',
+      'with_sysprofd=none',
+      'help=false',
+    ],
+    fallback: ['sysprof', 'libsysprof_capture_dep'],
+  )
+  config_h.set('HAVE_SYSPROF', libsysprof_capture_dep.found())
+  profiler_enabled = true
+else
+  libsysprof_capture_dep = disabler()
+  profiler_enabled = false
+endif
 
 if build_machine.system() == 'darwin' and gtk_quartz_dep.found()
   cocoa_dep = dependency('appleframeworks', modules: 'Cocoa', required: false)
@@ -219,6 +241,7 @@ else
     '-Wno-missing-field-initializers',
     '-Wno-sign-compare',
     '-Wno-unused-parameter',
+    '-Wno-typedef-redefinition',
     '-Wold-style-definition',
     '-Wpointer-arith',
     '-Wstrict-prototypes',
@@ -229,7 +252,14 @@ else
     '-Wunused',
     '-fno-strict-aliasing',
   ]
-  if get_option('buildtype') != 'plain'
+
+  # Ignore some Werror for clang until GLib fixes volatile usage in
+  # GType registration.
+  if meson.get_compiler('c').get_id() == 'clang'
+    test_c_args += ['-Wno-incompatible-pointer-types-discards-qualifiers']
+  endif
+
+  if buildtype != 'plain'
     test_c_args += '-fstack-protector-strong'
   endif
 endif
@@ -260,6 +290,27 @@ endif
 
 add_project_arguments(global_c_args, language: 'c')
 
+# Various optimizations for non-debug builds including disabling of
+# cast checks, asserts, and additional link options.
+release_link_args = []
+test_link_args = [
+  '-Wl,-z,defs',   # Detect and reject underlinking
+  '-Wl,-z,now',    # Disable lazy binding
+  '-Wl,-z,relro',  # Read-only segments after relocation
+]
+if not buildtype.startswith('debug')
+  add_global_arguments([
+    '-DG_DISABLE_ASSERT',
+    '-DG_DISABLE_CAST_CHECKS',
+  ], language: 'c')
+  test_link_args += ['-Wl,-Bsymbolic', '-fno-plt']
+endif
+foreach link_arg: test_link_args
+  if cc.has_link_argument(link_arg)
+    release_link_args += link_arg
+  endif
+endforeach
+
 configure_file(
          output: 'config.h',
   configuration: config_h
@@ -278,7 +329,6 @@ summary = [
   'GtkSourceView @0@ (@1@)'.format(version, api_version),
   '',
   '  Documentation: @0@'.format(build_gtk_doc),
-  '  Glade catalog: @0@'.format(install_glade_catalog),
   '  Install tests: @0@'.format(get_option('install_tests')),
   '  Introspection: @0@'.format(generate_gir),
   '      Vala vapi: @0@'.format(generate_vapi),
@@ -292,3 +342,5 @@ summary = [
 ]
 
 message('\n'.join(summary))
+
+meson.add_install_script('meson_postinstall.py')

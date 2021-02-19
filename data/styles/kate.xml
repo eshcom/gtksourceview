@@ -45,6 +45,7 @@
   <style name="bracket-mismatch"            background="red"/>
   <style name="draw-spaces"                 foreground="#d3d7cf"/>
   <style name="background-pattern"          background="#f3f3f3"/>
+  <style name="snippet-focus"               foreground="white" background="grey"/>
 
   <!-- Search Matching -->
   <style name="search-match"                background="yellow"/>
@@ -84,12 +85,26 @@
   <!-- Statements -->
   <style name="def:statement"               bold="true"/>
 
+  <!-- Markup -->
+  <style name="def:emphasis"                bold="true"/>
+  <style name="def:strong-emphasis"         bold="true"/>
+  <style name="def:inline-code"             foreground="dark-blue"/>
+  <style name="def:insertion"               underline="single"/>
+  <style name="def:deletion"                strikethrough="true"/>
+  <style name="def:link-text"               foreground="grey" italic="true" bold="false"/>
+  <style name="def:link-symbol"             foreground="grey" bold="true"/>
+  <style name="def:link-destination"        underline="single"/>
+  <style name="def:heading"                 foreground="dark-blue"/>
+  <style name="def:thematic-break"          foreground="dark-blue"/>
+  <style name="def:preformatted-section"    foreground="dark-blue"/>
+  <style name="def:list-marker"             bold="true"/>
+
   <!-- Others -->
   <style name="def:preprocessor"            bold="true"/>
   <style name="def:note"                    foreground="#BF0303" background="#F7E7E7" bold="true" italic="false"/>
   <style name="def:error"                   foreground="red" underline="true"/>
   <style name="def:warning"                 foreground="brown" underline="true"/>
-  <style name="def:underlined"              underline="single"/>
+  <style name="def:net-address"             underline="single"/>
 
   <!-- Heading styles, uncomment to enable -->
   <!--
@@ -127,8 +142,7 @@
   <style name="docbook:gui-elements"        use-style="docbook-element"/>
   <style name="docbook:structural-elements" use-style="docbook-element"/>
 
-  <style name="js:object"                   foreground="dark-green"/>
-  <style name="js:constructors"             bold="true"/>
+  <style name="js:built-in-constructor"     bold="true"/>
 
   <style name="mooscript:special-vars"      use-style="c:preprocessor"/>
 
@@ -161,11 +175,4 @@
   <style name="sh:dollar"                   foreground="dark-green" bold="true"/>
 
   <style name="makefile:trailing-tab"       background="#FFC0CB"/>
-
-  <style name="t2t:italic"                  italic="true"/>
-  <style name="t2t:bold"                    bold="true"/>
-  <style name="t2t:verbatim"                background="#lightgrey"/>
-  <style name="t2t:verbatim-block"          line-background="#lightgrey"/>
-  <style name="t2t:comment"                 foreground="dark-green"/>
-  <style name="t2t:option"                  foreground="dark-green"/>
 </style-scheme>

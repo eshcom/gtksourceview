@@ -1,4 +1,3 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8; coding: utf-8 -*- */
 /*
  * This file is part of GtkSourceView
  *
@@ -44,7 +43,7 @@ init_default_manager (void)
 		lang_dirs = g_new0 (gchar *, 2);
 		lang_dirs[0] = dir;
 
-		gtk_source_language_manager_set_search_path (lm, lang_dirs);
+		gtk_source_language_manager_set_search_path (lm, (const gchar * const *)lang_dirs);
 		g_strfreev (lang_dirs);
 	}
 	else
@@ -179,9 +178,11 @@ test_guess_language (void)
 	l = gtk_source_language_manager_guess_language (lm, "foo.c", "text/x-fortran");
 	g_assert_cmpstr (gtk_source_language_get_id (l), ==, "c");
 
+#if !defined(__APPLE__)
 	/* when content type is a descendent of the mime matched by the glob, mime wins */
 	l = gtk_source_language_manager_guess_language (lm, "foo.xml", "application/xslt+xml");
 	g_assert_cmpstr (gtk_source_language_get_id (l), ==, "xslt");
+#endif
 }
 
 int
